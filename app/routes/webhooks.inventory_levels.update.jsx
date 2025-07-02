@@ -33,10 +33,9 @@ export async function action({ request }) {
     },
   );
 
-  const json = await variantRes.json();
-  console.dir(json, { depth: null });
+  const variantJSON = await variantRes.json();
 
-  const variant = variantRes.data?.inventoryItem?.variant;
+  const variant = variantJSON.data?.inventoryItem?.variant;
   if (!variant?.id || !variant.inventoryPolicy || !variant.product?.id) {
     console.warn(
       "❌ Could not resolve variant, inventory policy, or product ID",
@@ -100,7 +99,9 @@ export async function action({ request }) {
     },
   });
 
-  const errors = mutationRes.data?.deliveryProfileUpdate?.userErrors || [];
+  const mutationJSON = await mutationRes.json();
+
+  const errors = mutationJSON.data?.deliveryProfileUpdate?.userErrors || [];
   if (errors.length) {
     console.warn("⚠️ Shipping profile update errors:", errors);
     return new Response("Profile update failed", { status: 500 });
