@@ -12,8 +12,8 @@ import {
 } from '@shopify/polaris';
 import { json, redirect } from '@remix-run/node';
 import { useLoaderData, Form, useSearchParams } from '@remix-run/react';
-import { authenticate } from '~/shopify.server';
-import prisma from '~/db.server';
+import { authenticate } from '../shopify.server';
+import prisma from '../db.server';
 import { useState } from 'react';
 
 export const loader = async ({ request }) => {
