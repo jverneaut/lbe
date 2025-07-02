@@ -12,7 +12,7 @@ export const loader = async ({ request }) => {
   // 2. Get all shipping profiles
   const profilesResp = await admin.graphql(`
     {
-      deliveryProfiles {
+      deliveryProfiles(first: 100) {
         nodes {
           id
           name
