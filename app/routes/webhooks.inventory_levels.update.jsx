@@ -9,5 +9,7 @@ export async function action({ request }) {
     shop,
   });
 
+  console.log('Should work');
+
   return new Response();
 }
