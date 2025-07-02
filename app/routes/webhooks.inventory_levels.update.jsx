@@ -4,7 +4,7 @@ export async function action({ request }) {
   const { admin } = await authenticate.webhook(request);
 
   const response = await admin.graphql(
-   `#graphql
+    `#graphql
     mutation createProduct($product: ProductCreateInput!) {
       productCreate(product: $product) {
         product {
@@ -44,7 +44,7 @@ export async function action({ request }) {
     variantId,
   });
 
-  console.log('Product created!');
+  console.log("Product created!");
 
   return new Response();
 }

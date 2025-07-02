@@ -9,21 +9,21 @@ import {
   Frame,
   Toast,
   useToast,
-} from '@shopify/polaris';
-import { json, redirect } from '@remix-run/node';
-import { useLoaderData, Form, useSearchParams } from '@remix-run/react';
-import { authenticate } from '../shopify.server';
-import prisma from '../db.server';
-import { useState } from 'react';
+} from "@shopify/polaris";
+import { json, redirect } from "@remix-run/node";
+import { useLoaderData, Form, useSearchParams } from "@remix-run/react";
+import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
+import { useState } from "react";
 
 export const loader = async ({ request }) => {
   const url = new URL(request.url);
-  const saved = url.searchParams.get('saved') === '1';
+  const saved = url.searchParams.get("saved") === "1";
 
   const { admin } = await authenticate.admin(request);
 
   // For now, hardcoded
-  const delayValues = ['1w', '2w', '1m', '2d'];
+  const delayValues = ["1w", "2w", "1m", "2d"];
 
   const profilesResp = await admin.graphql(`
     {
@@ -51,7 +51,7 @@ export const action = async ({ request }) => {
   for (const [key, profileId] of entries) {
     const delayValue = key;
 
-    if (typeof profileId === 'string' && profileId) {
+    if (typeof profileId === "string" && profileId) {
       await prisma.shippingDelayProfile.upsert({
         where: { delayValue },
         update: { profileId },
@@ -60,7 +60,7 @@ export const action = async ({ request }) => {
     }
   }
 
-  return redirect('/app/settings?saved=1');
+  return redirect("/app/settings?saved=1");
 };
 
 export default function SettingsPage() {
@@ -72,7 +72,9 @@ export default function SettingsPage() {
     <Toast content="Settings saved" onDismiss={toggleToastActive} />
   ) : null;
 
-  const savedMap = Object.fromEntries(savedMappings.map((s) => [s.delayValue, s.profileId]));
+  const savedMap = Object.fromEntries(
+    savedMappings.map((s) => [s.delayValue, s.profileId]),
+  );
 
   return (
     <Frame>
@@ -90,13 +92,16 @@ export default function SettingsPage() {
                       <Select
                         name={value}
                         options={[
-                          { label: '-- Select a shipping profile --', value: '' },
+                          {
+                            label: "-- Select a shipping profile --",
+                            value: "",
+                          },
                           ...profiles.map((profile) => ({
                             label: profile.name,
                             value: profile.id,
                           })),
                         ]}
-                        defaultValue={savedMap[value] || ''}
+                        defaultValue={savedMap[value] || ""}
                       />
                     </div>
                   ))}
