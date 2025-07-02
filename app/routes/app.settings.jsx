@@ -72,9 +72,21 @@ export default function SettingsPage() {
     <Toast content="Settings saved" onDismiss={toggleToastActive} />
   ) : null;
 
-  const savedMap = Object.fromEntries(
-    savedMappings.map((s) => [s.delayValue, s.profileId]),
+  // Create a state object like { "1w": "gid://...", "2w": "" }
+  const initialSelections = Object.fromEntries(
+    delayValues.map((delay) => [
+      delay,
+      savedMappings.find((m) => m.delayValue === delay)?.profileId || "",
+    ]),
   );
+  const [selections, setSelections] = useState(initialSelections);
+
+  const handleChange = (delayValue) => (newValue) => {
+    setSelections((prev) => ({
+      ...prev,
+      [delayValue]: newValue,
+    }));
+  };
 
   return (
     <Frame>
@@ -101,7 +113,8 @@ export default function SettingsPage() {
                             value: profile.id,
                           })),
                         ]}
-                        defaultValue={savedMap[value] || ""}
+                        value={selections[value]}
+                        onChange={handleChange(value)}
                       />
                     </div>
                   ))}
