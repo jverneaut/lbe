@@ -54,7 +54,7 @@ export const loader = async ({ request }) => {
   );
 
   const data = await response.json();
-  console.dir(data.data.nodes, { depth: null });
+  console.dir(data, { depth: null });
 
   const profilesResp = await admin.graphql(`
     {
