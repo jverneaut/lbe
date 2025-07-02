@@ -33,6 +33,9 @@ export async function action({ request }) {
     },
   );
 
+  const json = await variantRes.json();
+  console.dir(json, { depth: null });
+
   const variant = variantRes.data?.inventoryItem?.variant;
   if (!variant?.id || !variant.inventoryPolicy || !variant.product?.id) {
     console.warn(
