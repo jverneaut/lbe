@@ -23,8 +23,44 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
 
-  // For now, hardcoded
-  const delayValues = ["1w", "2w", "1m", "2d"];
+  // Query metafield definitions for products and variants for "custom.shipping_delay"
+  const productMetaDefResp = await admin.graphql(
+    `#graphql
+    query GetProductShippingDelayDefinition {
+      metafieldDefinition(namespace: "custom", key: "shipping_delay", ownerType: PRODUCT) {
+        validations {
+          ... on MetafieldDefinitionSelectValidation {
+            values
+          }
+        }
+      }
+    }`,
+  );
+
+  const variantMetaDefResp = await admin.graphql(
+    `#graphql
+    query GetVariantShippingDelayDefinition {
+      metafieldDefinition(namespace: "custom", key: "shipping_delay", ownerType: VARIANT) {
+        validations {
+          ... on MetafieldDefinitionSelectValidation {
+            values
+          }
+        }
+      }
+    }`,
+  );
+
+  // Extract values arrays (empty if none)
+  const productValues =
+    productMetaDefResp.data?.metafieldDefinition?.validations?.[0]?.values ||
+    [];
+
+  const variantValues =
+    variantMetaDefResp.data?.metafieldDefinition?.validations?.[0]?.values ||
+    [];
+
+  // Merge and deduplicate values
+  const delayValues = Array.from(new Set([...productValues, ...variantValues]));
 
   const profilesResp = await admin.graphql(`
     {
