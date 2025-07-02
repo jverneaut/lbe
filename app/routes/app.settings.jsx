@@ -1,7 +1,7 @@
 import { json, redirect } from '@remix-run/node';
 import { useLoaderData, Form } from '@remix-run/react';
-import { authenticate } from '~/shopify.server';
-import prisma from '~/db.server';
+import { authenticate } from '../shopify.server';
+import prisma from '../db.server';
 
 export const loader = async ({ request }) => {
   const { admin, shop } = await authenticate.admin(request);
