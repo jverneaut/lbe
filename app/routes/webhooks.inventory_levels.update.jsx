@@ -1,77 +1,113 @@
 import { authenticate } from "../shopify.server";
+import prisma from "../db.server";
 
 export async function action({ request }) {
   const { admin, payload } = await authenticate.webhook(request);
+  const { inventory_item_id: inventoryItemId, available } = payload;
 
-  console.log(payload);
+  // Step 1: Load variant and product info
+  const variantRes = await admin.graphql(
+    `#graphql
+    query VariantFromInventoryItem($inventoryItemId: ID!) {
+      inventoryItem(id: $inventoryItemId) {
+        variant {
+          id
+          inventoryPolicy
+          metafield(namespace: "custom", key: "shipping_delay") {
+            value
+          }
+          product {
+            id
+            metafield(namespace: "custom", key: "shipping_delay") {
+              value
+            }
+          }
+        }
+      }
+    }
+    `,
+    {
+      variables: {
+        inventoryItemId: `gid://shopify/InventoryItem/${inventoryItemId}`,
+      },
+    },
+  );
 
-  // TODO:
-  // I think we should be very careful about how we handle setting the profile,
-  // as it can change between the moment the person added the last item to cart
-  // and the moment he goes to checkout.
-  // If there is only one item remaining, then he can order it, then the item is
-  // out of stock, then the new shipping profile is applied and as such the order
-  // will be displayed as shipping later
+  const variant = variantRes.data?.inventoryItem?.variant;
+  if (!variant?.id || !variant.inventoryPolicy || !variant.product?.id) {
+    console.warn(
+      "❌ Could not resolve variant, inventory policy, or product ID",
+    );
 
-  // await admin.graphql(
-  //   `mutation assignToBackorderProfile($id: ID!, $variants: [ID!]!) {
-  //     deliveryProfileUpdate(id: $id, profile: {
-  //       variantsToAssociate: $variants
-  //     }) {
-  //       profile { id }
-  //       userErrors { message }
-  //     }
-  //   }`,
-  //   {
-  //     variables: {
-  //       id: BACKORDER_PROFILE_ID,
-  //       variants: [variantId],
-  //     },
-  //   },
-  // );
+    return new Response("Invalid variant data", { status: 200 });
+  }
 
-  // const response = await admin.graphql(
-  //   `#graphql
-  //   mutation createProduct($product: ProductCreateInput!) {
-  //     productCreate(product: $product) {
-  //       product {
-  //         id
-  //         title
-  //         handle
-  //         status
-  //         variants(first: 10) {
-  //           edges {
-  //             node {
-  //               id
-  //               price
-  //               barcode
-  //               createdAt
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-  //  `,
-  //   {
-  //     variables: {
-  //       product: {
-  //         title: `TEST Product creation`,
-  //       },
-  //     },
-  //   },
-  // );
+  const variantId = variant.id;
+  const inventoryPolicy = variant.inventoryPolicy;
+  const variantDelay = variant.metafield?.value;
+  const productDelay = variant.product.metafield?.value;
+  const shippingDelay = variantDelay || productDelay;
 
-  // const responseJson = await response.json();
-  // const product = responseJson.data.productCreate.product;
-  // const variantId = product.variants.edges[0].node.id;
+  // Step 2: Validate conditions
+  const isOutOfStock = available <= 0;
+  const isBackorderable = inventoryPolicy === "CONTINUE";
 
-  // console.log({
-  //   product,
-  //   variantId,
-  // });
+  if (!isBackorderable || !shippingDelay) {
+    console.log("Not backorderable or no shipping delay set. Skipping.");
+    return new Response("No action needed", { status: 200 });
+  }
 
-  // console.log("Product created!");
+  // Step 3: Check mapped shipping profile
+  const profileMapping = await prisma.shippingDelayProfile.findUnique({
+    where: { delayValue: shippingDelay },
+  });
+
+  if (!profileMapping) {
+    console.warn(`⚠️ No profile mapping for delay value '${shippingDelay}'`);
+    return new Response("No matching profile found", { status: 200 });
+  }
+
+  const profileId = profileMapping.profileId;
+
+  // Step 4: Assign or remove from shipping profile
+  const graphqlMutation = isOutOfStock
+    ? `#graphql
+      mutation assignToProfile($id: ID!, $variants: [ID!]!) {
+        deliveryProfileUpdate(id: $id, profile: {
+          variantsToAssociate: $variants
+        }) {
+          profile { id }
+          userErrors { message }
+        }
+      }`
+    : `#graphql
+      mutation unassignFromProfile($id: ID!, $variants: [ID!]!) {
+        deliveryProfileUpdate(id: $id, profile: {
+          variantsToDisassociate: $variants
+        }) {
+          profile { id }
+          userErrors { message }
+        }
+      }`;
+
+  const mutationRes = await admin.graphql(graphqlMutation, {
+    variables: {
+      id: profileId,
+      variants: [variantId],
+    },
+  });
+
+  const errors = mutationRes.data?.deliveryProfileUpdate?.userErrors || [];
+  if (errors.length) {
+    console.warn("⚠️ Shipping profile update errors:", errors);
+    return new Response("Profile update failed", { status: 500 });
+  }
+
+  console.log(
+    isOutOfStock
+      ? `✅ Assigned ${variantId} to ${profileId}`
+      : `🧹 Removed ${variantId} from ${profileId}`,
+  );
 
   return new Response();
 }
