@@ -7,19 +7,15 @@ import {
   Button,
   FormLayout,
   Frame,
-  Toast,
-  useToast,
 } from "@shopify/polaris";
 import { json, redirect } from "@remix-run/node";
-import { useLoaderData, Form, useSearchParams } from "@remix-run/react";
+import { useLoaderData, Form } from "@remix-run/react";
 import { authenticate } from "../shopify.server";
 import prisma from "../db.server";
 import { useState } from "react";
+import { useAppBridge } from "@shopify/app-bridge-react";
 
 export const loader = async ({ request }) => {
-  const url = new URL(request.url);
-  const saved = url.searchParams.get("saved") === "1";
-
   const { admin } = await authenticate.admin(request);
 
   // For now, hardcoded
@@ -41,7 +37,7 @@ export const loader = async ({ request }) => {
 
   const savedMappings = await prisma.shippingDelayProfile.findMany({});
 
-  return json({ delayValues, profiles, savedMappings, saved });
+  return json({ delayValues, profiles, savedMappings });
 };
 
 export const action = async ({ request }) => {
@@ -60,17 +56,11 @@ export const action = async ({ request }) => {
     }
   }
 
-  return redirect("/app/settings?saved=1");
+  return redirect("/app/settings");
 };
 
 export default function SettingsPage() {
-  const { delayValues, profiles, savedMappings, saved } = useLoaderData();
-  const [toastActive, setToastActive] = useState(saved);
-
-  const toggleToastActive = () => setToastActive(false);
-  const toastMarkup = toastActive ? (
-    <Toast content="Settings saved" onDismiss={toggleToastActive} />
-  ) : null;
+  const { delayValues, profiles, savedMappings } = useLoaderData();
 
   // Create a state object like { "1w": "gid://...", "2w": "" }
   const initialSelections = Object.fromEntries(
@@ -86,6 +76,12 @@ export default function SettingsPage() {
       ...prev,
       [delayValue]: newValue,
     }));
+  };
+
+  const shopify = useAppBridge();
+
+  const showToast = () => {
+    shopify.toast.show("Settings saved");
   };
 
   return (
@@ -119,7 +115,7 @@ export default function SettingsPage() {
                     </div>
                   ))}
 
-                  <Button primary submit>
+                  <Button primary submit onClick={showToast}>
                     Save Settings
                   </Button>
                 </FormLayout>
@@ -127,7 +123,6 @@ export default function SettingsPage() {
             </Card>
           </Layout.Section>
         </Layout>
-        {toastMarkup}
       </Page>
     </Frame>
   );
