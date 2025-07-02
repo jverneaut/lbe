@@ -36,6 +36,9 @@ export async function action({ request }) {
   const variantJSON = await variantRes.json();
 
   const variant = variantJSON.data?.inventoryItem?.variant;
+  console.log(variant);
+  console.log(variant?.id, variant?.inventoryPolicy, variant?.product?.id);
+
   if (!variant?.id || !variant.inventoryPolicy || !variant.product?.id) {
     console.warn(
       "❌ Could not resolve variant, inventory policy, or product ID",
