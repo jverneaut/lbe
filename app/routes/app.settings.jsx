@@ -15,6 +15,11 @@ import prisma from "../db.server";
 import { useState } from "react";
 import { useAppBridge } from "@shopify/app-bridge-react";
 
+// TODO:
+// 1. Set shipping profiles to the default one automatically when
+// they are set as a mapping to a value if possible.
+// 2. Find a way to remove old mapping if/when values or profiles are removed
+
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
 
