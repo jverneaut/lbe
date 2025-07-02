@@ -22,9 +22,7 @@ export const loader = async ({ request }) => {
   `);
 
   const profilesJSON = await profilesResp.json();
-  console.log(profilesJSON);
-
-  const profiles = profilesResp.body.data.deliveryProfiles.nodes;
+  const profiles = profilesJSON.data.deliveryProfiles.nodes;
 
   // 3. Get saved mappings from Prisma
   const saved = await prisma.shippingDelayProfile.findMany({
