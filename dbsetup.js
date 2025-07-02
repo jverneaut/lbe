@@ -6,6 +6,7 @@ import fs from 'node:fs'
 
 const env = { ...process.env }
 
+try {
 // place Sqlite3 database on volume
 const source = path.resolve('/dev.sqlite')
 const target = '/data/' + path.basename(source)
@@ -13,6 +14,10 @@ if (!fs.existsSync(source) && fs.existsSync('/data')) fs.symlinkSync(target, sou
 const newDb = !fs.existsSync(target)
 if (newDb && process.env.BUCKET_NAME) {
   await exec(`npx litestream restore -config litestream.yml -if-replica-exists ${target}`)
+}
+}
+catch (err) {
+  console.log(err);
 }
 
 // prepare database
