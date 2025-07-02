@@ -88,7 +88,7 @@ export async function action({ request }) {
     : `#graphql
       mutation unassignFromProfile($id: ID!, $variants: [ID!]!) {
         deliveryProfileUpdate(id: $id, profile: {
-          variantsToDisassociate: $variants
+          variantsToDissociate: $variants
         }) {
           profile { id }
           userErrors { message }
