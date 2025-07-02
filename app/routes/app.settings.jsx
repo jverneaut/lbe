@@ -21,7 +21,8 @@ export const loader = async ({ request }) => {
     }
   `);
 
-  console.log(profilesResp.json());
+  const profilesJSON = await profilesResp.json();
+  console.log(profilesJSON);
 
   const profiles = profilesResp.body.data.deliveryProfiles.nodes;
 
