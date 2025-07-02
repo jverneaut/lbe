@@ -23,68 +23,38 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
 
-  // Query metafield definitions for products and variants for "custom.shipping_delay"
-  const productMetaDefResp = await admin.graphql(
+  // For now, hardcoded
+  const delayValues = ["1w", "2w", "1m", "2d"];
+
+  const response = await admin.graphql(
     `#graphql
-    query GetProductShippingDelayDefinition {
-      metafieldDefinitions(ownerType: PRODUCT, first: 100) {
+    query MetafieldDefinitions($ownerType: MetafieldOwnerType!, $first: Int) {
+      metafieldDefinitions(ownerType: $ownerType, first: $first) {
         nodes {
+          name
           namespace
           key
+          type {
+            name
+          }
           validations {
-            __typename
-            ... on MetafieldDefinitionSelectValidation {
-              values
-            }
-            # Other validation types will return only __typename and no values
+            name
+            type
+            value
           }
         }
       }
     }`,
+    {
+      variables: {
+        ownerType: "PRODUCT",
+        first: 100,
+      },
+    },
   );
 
-  const variantMetaDefResp = await admin.graphql(
-    `#graphql
-    query GetVariantShippingDelayDefinition {
-      metafieldDefinitions(ownerType: VARIANT, first: 100) {
-        nodes {
-          namespace
-          key
-          validations {
-            __typename
-            ... on MetafieldDefinitionSelectValidation {
-              values
-            }
-          }
-        }
-      }
-    }`,
-  );
-
-  // Extract shipping_delay values for products
-  const productDefs = productMetaDefResp.data.metafieldDefinitions.nodes;
-  const productShippingDelayDef = productDefs.find(
-    (def) => def.namespace === "custom" && def.key === "shipping_delay",
-  );
-  const productValues = productShippingDelayDef
-    ? productShippingDelayDef.validations
-        .filter((v) => v.__typename === "MetafieldDefinitionSelectValidation")
-        .flatMap((v) => v.values || [])
-    : [];
-
-  // Extract shipping_delay values for variants
-  const variantDefs = variantMetaDefResp.data.metafieldDefinitions.nodes;
-  const variantShippingDelayDef = variantDefs.find(
-    (def) => def.namespace === "custom" && def.key === "shipping_delay",
-  );
-  const variantValues = variantShippingDelayDef
-    ? variantShippingDelayDef.validations
-        .filter((v) => v.__typename === "MetafieldDefinitionSelectValidation")
-        .flatMap((v) => v.values || [])
-    : [];
-
-  // Merge and deduplicate values
-  const delayValues = Array.from(new Set([...productValues, ...variantValues]));
+  const data = await response.json();
+  console.log(data);
 
   const profilesResp = await admin.graphql(`
     {
