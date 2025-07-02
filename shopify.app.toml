@@ -3,7 +3,7 @@
 client_id = "94a244c57d982f8be0ec595b78e66dfd"
 name = "lbe"
 handle = "lbe"
-application_url = "https://example.com/"
+application_url = "https://lbe.fly.dev/"
 embedded = true
 
 [build]
@@ -25,7 +25,11 @@ api_version = "2025-07"
 scopes = "write_products"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [
+  "https://lbe.fly.dev/auth/callback",
+  "https://lbe.fly.dev/auth/shopify/callback",
+  "https://lbe.fly.dev/api/auth/callback"
+]
 
 [pos]
 embedded = false
