@@ -40,9 +40,7 @@ export const action = async ({ request }) => {
     if (typeof profileId === 'string' && profileId) {
       await prisma.shippingDelayProfile.upsert({
         where: {
-          delayValue: {
-            delayValue,
-          },
+          delayValue,
         },
         update: { profileId },
         create: {
