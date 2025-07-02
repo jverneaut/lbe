@@ -13,12 +13,13 @@ primary_region = 'cdg'
   SCOPES = 'write_products'
   SHOPIFY_API_KEY = '94a244c57d982f8be0ec595b78e66dfd'
   SHOPIFY_APP_URL = 'https://lbe.fly.dev'
+  DATABASE_URL = "file:/data/db.sqlite"
 
 [processes]
   app = 'node ./dbsetup.js npm run docker-start'
 
 [[mounts]]
-  source = 'data'
+  source = 'db_vol'
   destination = '/data'
   auto_extend_size_threshold = 80
   auto_extend_size_increment = '1GB'
