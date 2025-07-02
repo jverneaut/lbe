@@ -4,7 +4,7 @@ import { authenticate } from '../shopify.server';
 import prisma from '../db.server';
 
 export const loader = async ({ request }) => {
-  const { admin, shop } = await authenticate.admin(request);
+  const { admin } = await authenticate.admin(request);
 
   // 1. Get all unique shipping_delay values from variants
   const delayValues = ['1w', '2w', '1m', '2d'];
@@ -25,15 +25,12 @@ export const loader = async ({ request }) => {
   const profiles = profilesJSON.data.deliveryProfiles.nodes;
 
   // 3. Get saved mappings from Prisma
-  const saved = await prisma.shippingDelayProfile.findMany({
-    where: { shop },
-  });
+  const saved = await prisma.shippingDelayProfile.findMany({});
 
   return json({ delayValues, profiles, saved });
 };
 
 export const action = async ({ request }) => {
-  const { shop } = await authenticate.admin(request);
   const formData = await request.formData();
 
   const entries = [...formData.entries()];
@@ -44,13 +41,11 @@ export const action = async ({ request }) => {
       await prisma.shippingDelayProfile.upsert({
         where: {
           shop_delayValue: {
-            shop,
             delayValue,
           },
         },
         update: { profileId },
         create: {
-          shop,
           delayValue,
           profileId,
         },
