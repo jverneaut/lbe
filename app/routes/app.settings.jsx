@@ -71,7 +71,7 @@ export const loader = async ({ request }) => {
     }`,
     {
       variables: {
-        ownerType: "VARIANT",
+        ownerType: "PRODUCTVARIANT",
         first: 100,
       },
     },
