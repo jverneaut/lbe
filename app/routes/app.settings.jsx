@@ -32,9 +32,11 @@ export const loader = async ({ request }) => {
           namespace
           key
           validations {
+            __typename
             ... on MetafieldDefinitionSelectValidation {
               values
             }
+            # Other validation types will return only __typename and no values
           }
         }
       }
@@ -49,6 +51,7 @@ export const loader = async ({ request }) => {
           namespace
           key
           validations {
+            __typename
             ... on MetafieldDefinitionSelectValidation {
               values
             }
@@ -63,14 +66,22 @@ export const loader = async ({ request }) => {
   const productShippingDelayDef = productDefs.find(
     (def) => def.namespace === "custom" && def.key === "shipping_delay",
   );
-  const productValues = productShippingDelayDef?.validations?.[0]?.values || [];
+  const productValues = productShippingDelayDef
+    ? productShippingDelayDef.validations
+        .filter((v) => v.__typename === "MetafieldDefinitionSelectValidation")
+        .flatMap((v) => v.values || [])
+    : [];
 
   // Extract shipping_delay values for variants
   const variantDefs = variantMetaDefResp.data.metafieldDefinitions.nodes;
   const variantShippingDelayDef = variantDefs.find(
     (def) => def.namespace === "custom" && def.key === "shipping_delay",
   );
-  const variantValues = variantShippingDelayDef?.validations?.[0]?.values || [];
+  const variantValues = variantShippingDelayDef
+    ? variantShippingDelayDef.validations
+        .filter((v) => v.__typename === "MetafieldDefinitionSelectValidation")
+        .flatMap((v) => v.values || [])
+    : [];
 
   // Merge and deduplicate values
   const delayValues = Array.from(new Set([...productValues, ...variantValues]));
