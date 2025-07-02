@@ -23,10 +23,7 @@ import { useAppBridge } from "@shopify/app-bridge-react";
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
 
-  // For now, hardcoded
-  const delayValues = ["1w", "2w", "1m", "2d"];
-
-  const response = await admin.graphql(
+  const productMetafieldDefinitions = await admin.graphql(
     `#graphql
     query MetafieldDefinitions($ownerType: MetafieldOwnerType!, $first: Int) {
       metafieldDefinitions(ownerType: $ownerType, first: $first) {
@@ -53,8 +50,61 @@ export const loader = async ({ request }) => {
     },
   );
 
-  const data = await response.json();
-  console.dir(data, { depth: null });
+  const variantMetafieldDefinitions = await admin.graphql(
+    `#graphql
+    query MetafieldDefinitions($ownerType: MetafieldOwnerType!, $first: Int) {
+      metafieldDefinitions(ownerType: $ownerType, first: $first) {
+        nodes {
+          name
+          namespace
+          key
+          type {
+            name
+          }
+          validations {
+            name
+            type
+            value
+          }
+        }
+      }
+    }`,
+    {
+      variables: {
+        ownerType: "VARIANT",
+        first: 100,
+      },
+    },
+  );
+
+  const productMetafieldDefinitionsJSON =
+    await productMetafieldDefinitions.json();
+  const variantMetafieldDefinitionsJSON =
+    await variantMetafieldDefinitions.json();
+
+  const definitions = [
+    ...(productMetafieldDefinitionsJSON.data?.metafieldDefinitions.nodes || []),
+    ...(variantMetafieldDefinitionsJSON.data?.metafieldDefinitions.nodes || []),
+  ].filter((node) => node.key === "shipping_delay");
+
+  const uniqueValues = definitions.reduce((acc, curr) => {
+    const choicesValidations = (curr.validations || []).filter(
+      (validation) => validation.name === "choices",
+    );
+
+    if (!choicesValidations.length) {
+      return acc;
+    }
+
+    const values = JSON.parse(choicesValidations[0].value);
+    for (const val of values) {
+      acc.add(val);
+    }
+
+    return acc;
+  }, new Set());
+
+  const delayValues = Array.from(uniqueValues);
 
   const profilesResp = await admin.graphql(`
     {
