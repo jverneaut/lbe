@@ -27,10 +27,14 @@ export const loader = async ({ request }) => {
   const productMetaDefResp = await admin.graphql(
     `#graphql
     query GetProductShippingDelayDefinition {
-      metafieldDefinition(namespace: "custom", key: "shipping_delay", ownerType: PRODUCT) {
-        validations {
-          ... on MetafieldDefinitionSelectValidation {
-            values
+      metafieldDefinitions(ownerType: PRODUCT, first: 100) {
+        nodes {
+          namespace
+          key
+          validations {
+            ... on MetafieldDefinitionSelectValidation {
+              values
+            }
           }
         }
       }
@@ -40,24 +44,33 @@ export const loader = async ({ request }) => {
   const variantMetaDefResp = await admin.graphql(
     `#graphql
     query GetVariantShippingDelayDefinition {
-      metafieldDefinition(namespace: "custom", key: "shipping_delay", ownerType: VARIANT) {
-        validations {
-          ... on MetafieldDefinitionSelectValidation {
-            values
+      metafieldDefinitions(ownerType: VARIANT, first: 100) {
+        nodes {
+          namespace
+          key
+          validations {
+            ... on MetafieldDefinitionSelectValidation {
+              values
+            }
           }
         }
       }
     }`,
   );
 
-  // Extract values arrays (empty if none)
-  const productValues =
-    productMetaDefResp.data?.metafieldDefinition?.validations?.[0]?.values ||
-    [];
+  // Extract shipping_delay values for products
+  const productDefs = productMetaDefResp.data.metafieldDefinitions.nodes;
+  const productShippingDelayDef = productDefs.find(
+    (def) => def.namespace === "custom" && def.key === "shipping_delay",
+  );
+  const productValues = productShippingDelayDef?.validations?.[0]?.values || [];
 
-  const variantValues =
-    variantMetaDefResp.data?.metafieldDefinition?.validations?.[0]?.values ||
-    [];
+  // Extract shipping_delay values for variants
+  const variantDefs = variantMetaDefResp.data.metafieldDefinitions.nodes;
+  const variantShippingDelayDef = variantDefs.find(
+    (def) => def.namespace === "custom" && def.key === "shipping_delay",
+  );
+  const variantValues = variantShippingDelayDef?.validations?.[0]?.values || [];
 
   // Merge and deduplicate values
   const delayValues = Array.from(new Set([...productValues, ...variantValues]));
