@@ -33,11 +33,10 @@ model Session {
 
 model ShippingDelayProfile {
   id         String   @id @default(cuid())
-  shop       String
   delayValue String
   profileId  String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@unique([shop, delayValue])
+  @@unique([delayValue])
 }
