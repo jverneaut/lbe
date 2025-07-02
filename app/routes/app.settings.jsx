@@ -21,6 +21,8 @@ export const loader = async ({ request }) => {
     }
   `);
 
+  console.log(profilesResp.json());
+
   const profiles = profilesResp.body.data.deliveryProfiles.nodes;
 
   // 3. Get saved mappings from Prisma
